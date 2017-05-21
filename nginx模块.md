@@ -103,8 +103,6 @@ location /admin/ {
 }
 ```
 
-#### ngx_http_ssl_module
-
 #### Access
 这个模块用来指令你通过指定的 ip 或 ip范围 来允许或拒绝被访问的资源。包含两个重要指令（allow 和 deny）。常见配置如下：
 ```nginx
