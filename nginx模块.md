@@ -2,19 +2,20 @@
 
 ### nginx模块划分
 
-从结构上分：
-核心模块：HTTP模块，EVENT模块，MAIL模块
-基础模块：HTTPAccess模块，HTTP FastCGI模块，HTTP Proxy模块，HTTP Rewrite模块
+**从结构上分：**   
+核心模块：HTTP模块，EVENT模块，MAIL模块。   
+基础模块：HTTPAccess模块，HTTP FastCGI模块，HTTP Proxy模块，HTTP Rewrite模块。   
 第三方模块：HTTP Upstream Hash模块，Notice模块，HTTP Access Key模块
 
-从功能上分：
-Handles（处理器模块）：直接处理请求，并进行输出内容和修改headers信息，Handles处理器模块一般只能有一个
-Filters（过滤器模块）：对其他处理器模块输出内容进行修改操作。最后由Nginx输出
-Proxies（代理类模块）：与后端一些服务，比如FastCGI进行交互。实现服务代理和负载均衡等功能
 
-工作模式：
-1.单工作进程模式：除主进程外，还有一个工作进程，且工作进程是单线程的
-2.多工作进程模式：每个工作进程包含多工作线程
+**从功能上分：**   
+Handles（处理器模块）：直接处理请求，并进行输出内容和修改headers信息，Handles处理器模块一般只能有一个。   
+Filters（过滤器模块）：对其他处理器模块输出内容进行修改操作。最后由Nginx输出。   
+Proxies（代理类模块）：与后端一些服务，比如FastCGI进行交互。实现服务代理和负载均衡等功能。   
+
+**工作模式： **  
+1.单工作进程模式：除主进程外，还有一个工作进程，且工作进程是单线程的。   
+2.多工作进程模式：每个工作进程包含多工作线程。   
 
 
 ### nginx常用模块
