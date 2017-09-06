@@ -172,7 +172,7 @@ ETCD_START="start-stop-daemon \
 # >> $ETCD_LOGFILE 2>&1"
 ```
 
-####启动kubernetes服务
+#### 启动kubernetes服务
 
 **清空防火墙规则**
 
