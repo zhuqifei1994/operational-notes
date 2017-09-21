@@ -1,5 +1,8 @@
 # 基本原理
-使用 registartor 检测本地 docker 上所起的服务并注册到指定的 consul 机器上。使用 consul 来做服务发现。使用 traefik 做代理服务。
+* 使用 registartor 检测本地 docker 上所起的服务以及所暴露的端口，并注册到指定的 consul 机器上。
+* 使用 consul 来做服务发现。
+* 使用 traefik 做代理服务。
+      
 # 快速搭建
 ## 1. 服务器环境
 | IP地址       |  系统版本    |
@@ -7,6 +10,7 @@
 | 192.168.0.2 | Ubuntu14.04 |
 | 192.168.0.3 | Ubuntu14.04 |
 | 192.168.0.4 | Ubuntu14.04 |
+      
 ## 2. consul的搭建
 启动脚本：
 ```bash
@@ -21,9 +25,7 @@ docker run -d --net=host --name consul consul:v0.6.4 \
 ```
 
 ## 3. registrator搭建
-
 启动脚本
-
 ```Bash
 #!/bin/bash
 docker run -d --net=host -v /var/run/docker.sock:/tmp/docker.sock --name registrator gliderlabs/registrator:v7 \
@@ -95,3 +97,25 @@ ReadOnly = false
   domain = "zqifei.com"
   prefix = "traefik"
 ```
+
+启动脚本：
+```bash
+#!/bin/bash
+
+NAME=`docker ps -a | grep traefik | awk '{print $NF}'`
+
+if [ "$NAME" = "traefik" ]; then
+	docker rm -f traefik;
+	echo "traefik have delete!";
+else
+	echo "traefik not running!";
+fi
+
+docker run --restart=always -d -p 8080:8080 -p 80:80 -p 443:443 --name traefik \
+  -v $PWD/traefik.toml:/etc/traefik/traefik.toml \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /data/volumes/traefik:/var/log \
+  -v /etc/letsencrypt:/etc/ssl \
+  traefik:v1.2.3
+```
+
