@@ -1,7 +1,7 @@
 # 基本原理
 * 使用 registartor 检测本地 docker 上所起的服务以及所暴露的端口，并注册到指定的 consul 机器上。
 * 使用 consul 来做服务发现。
-* 使用 traefik 做代理服务。
+* 使用 traefik 做代理服务，后端有新的docker服务创建以后会自动检测到该服务，并为该服务自动生成域名。
       
 # 快速搭建
 ## 1. 服务器环境
@@ -15,7 +15,7 @@
 node1 启动脚本：
 ```bash
 #!/bin/bash
-docker run -d --net=host --name consul consul:v0.6.4 \
+docker run -d --net=host --restart=always --name consul consul:v0.6.4 \
   agent -server \
   -node=node1 \
   -client=192.168.0.2 \
@@ -27,7 +27,7 @@ docker run -d --net=host --name consul consul:v0.6.4 \
 node2 启动脚本:
 ```bash
 #!/bin/bash
-docker run -d --net=host --name consul consul:v0.6.4 \
+docker run -d --net=host --restart=always --name consul consul:v0.6.4 \
   agent -server \
   -node=node2 \
   -client=192.168.0.3 \
@@ -39,7 +39,7 @@ docker run -d --net=host --name consul consul:v0.6.4 \
 node3 启动脚本:
 ```bash
 #!/bin/bash
-docker run -d --net=host --name consul consul:v0.6.4 \
+docker run -d --net=host --restart=always --name consul consul:v0.6.4 \
   agent -server \
   -node=node3 \
   -client=192.168.0.4 \
@@ -50,10 +50,10 @@ docker run -d --net=host --name consul consul:v0.6.4 \
 
 
 ## 3. registrator搭建
-启动脚本
+启动脚本:
 ```Bash
 #!/bin/bash
-docker run -d --net=host -v /var/run/docker.sock:/tmp/docker.sock --name registrator gliderlabs/registrator:v7 \
+docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator gliderlabs/registrator:v7 \
   -ip 192.168.0.2 \
   consul://192.168.0.2:8500
 ```
@@ -74,7 +74,7 @@ traefikLogsFile = "/var/log/traefik.log"
 accessLogsFile = "/var/log/access.log"
 errorLogsFile = "/var/log/error.log"
 
-# 开启http和https，这里的https证书使用的是 [certbot](https://github.com/certbot/certbot) 生成的。
+# 开启http和https，这里的https证书使用的是 certbot(https://github.com/certbot/certbot) 生成的。
 [entryPoints]
  [entryPoints.http]
  address = ":80"
@@ -85,7 +85,7 @@ errorLogsFile = "/var/log/error.log"
 	CertFile = "/etc/ssl/live/www.zqifei.com/fullchain.pem"
 	KeyFile = "/etc/ssl/live/www.zqifei.com/privkey.pem"
 
-# 为traefik服务添加域名
+# 这里我为traefik服务添加了域名：traefik.zqifei.com
 [file]
 [backends]
  [backends.backend1]
@@ -132,22 +132,28 @@ ReadOnly = false
 ```bash
 #!/bin/bash
 
-NAME=`docker ps -a | grep traefik | awk '{print $NF}'`
-
-if [ "$NAME" = "traefik" ]; then
-	docker rm -f traefik;
-	echo "traefik have delete!";
-else
-	echo "traefik not running!";
-fi
-
-docker run --restart=always -d -p 8080:8080 -p 80:80 -p 443:443 --name traefik \
+docker_run() {
+  docker run --restart=always -d -p 8080:8080 -p 80:80 -p 443:443 --name traefik \
   -v $PWD/traefik.toml:/etc/traefik/traefik.toml \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /data/volumes/traefik:/var/log \
   -v /etc/letsencrypt:/etc/ssl \
   traefik:v1.2.3
+}
+
+NAME=`docker ps -a | grep traefik | awk '{print $NF}'`
+
+if [ "$NAME" = "traefik" ]; then
+	docker rm -f traefik;
+	echo "traefik have delete!";
+  docker_run;
+  echo "traefik start running!";
+else
+	echo "traefik not running!";
+  docker_run;
+  echo "traefik start running!";
+fi
 ```
 访问服务：
 通过浏览器访问 https://traefik.zqifei.com 会出现账号密码验证，输入在配置文件设置的密码即可登录进去。
-更多 traefik 配置请参考 [traefik官方文档](https://docs.traefik.io/)
+更多 traefik 配置请参考 [traefik官方文档](https://docs.traefik.io/)。
