@@ -10,7 +10,37 @@
 | node2 | 192.168.0.3 | Ubuntu14.04 | 1.12.3   |
 | node3 | 192.168.0.4 | Ubuntu14.04 | 1.12.3   |
 
-## 2. consul的搭建
+## 2. registrator搭建
+使用 registartor 检测本地 docker 上所起的服务以及所暴露的端口，并注册到指定的 consul 机器上。
+### registrator服务的部署
+node1 启动脚本:
+
+```Bash
+#!/bin/bash
+docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
+  gliderlabs/registrator:v7 \
+  -ip 192.168.0.2 \
+  consul://192.168.0.2:8500
+```
+node2 启动脚本:
+```Bash
+#!/bin/bash
+docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
+  gliderlabs/registrator:v7 \
+  -ip 192.168.0.3 \
+  consul://192.168.0.3:8500
+```
+
+node2 启动脚本:
+```Bash
+#!/bin/bash
+docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
+  gliderlabs/registrator:v7 \
+  -ip 192.168.0.3 \
+  consul://192/168.0.4:8500
+```
+
+## 3. consul的搭建
 consul 是一个拥有 HTTP API 和 DNS 的服务，它还包括很多其他的功能如：服务健康检查、跨主机集群构建和"key-value"存储。
 ### consul服务的部署
 node1 启动脚本：
@@ -50,7 +80,7 @@ docker run -d --net=host --restart=always --name consul consul:v0.6.4 \
 ```
 ### consul DNS配置
 #### 配置DNS服务
-最好在每台主机都配置上 DNS 服务，IP 指向本机 IP 地址。
+最好在每台主机都配置上 DNS 服务。
 ```bash
 $ apt-get install dnsmasq
 ```
@@ -66,7 +96,7 @@ $ vim /etc/default/docker
 DOCKER_OPTS=" --storage-driver=aufs --dns=192.168.0.2"
 ```
 #### 测试DNS服务
-在集群任意一台服务器上起一个 redis 容器，启动时需要指定环境变量 "SERVER_NAME=redis" (可以自定义名)。
+在集群任意一台服务器上起一个 redis 容器，启动时需要指定环境变量 "SERVER_NAME=redis"。
 ```bash
 $ ping redis.service.dc1.consul
 PING redis.service.dc1.consul (192.168.0.2) 56(84) bytes of data.
@@ -74,37 +104,6 @@ PING redis.service.dc1.consul (192.168.0.2) 56(84) bytes of data.
 64 bytes from node1 (192.168.0.2): icmp_seq=1 ttl=64 time=0.021 ms
 ```
 可以正确找到 redis 服务所在的服务器 IP 地址即可。
-
-
-## 3. registrator搭建
-使用 registartor 检测本地 docker 上所起的服务以及所暴露的端口，并注册到指定的 consul 机器上。
-
-node1 启动脚本:
-
-```Bash
-#!/bin/bash
-docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
-  gliderlabs/registrator:v7 \
-  -ip 192.168.0.2 \
-  consul://192.168.0.2:8500
-```
-node2 启动脚本:
-```Bash
-#!/bin/bash
-docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
-  gliderlabs/registrator:v7 \
-  -ip 192.168.0.3 \
-  consul://192.168.0.3:8500
-```
-
-node2 启动脚本:
-```Bash
-#!/bin/bash
-docker run -d --net=host --restart=always -v /var/run/docker.sock:/tmp/docker.sock --name registrator
-  gliderlabs/registrator:v7 \
-  -ip 192.168.0.3 \
-  consul://192/168.0.4:8500
-```
 
 ## 4. traefik搭建
 ### 配置traefik服务
@@ -204,5 +203,5 @@ else
 fi
 ```
 ### traefik界面访问
-通过浏览器访问 https://traefik.zqifei.com (记得将域名解析到代理服务器上)会出现账号密码验证，输入在配置文件设置的密码即可登录进去。更多 traefik 配置请参考 [traefik官方文档](https://docs.traefik.io/)。
+通过浏览器访问 https://traefik.zqifei.com (记得将域名解析到代理服务器上)会出现账号密码验证，输入在配置文件设置的密码即可登录进去。更多 traefik 配置请参考 [traefik官方文档](https://docs.traefik.io/)。       
 ![20170924150626425397349.png](http://cdn.zqifei.com/20170924150626425397349.png)
